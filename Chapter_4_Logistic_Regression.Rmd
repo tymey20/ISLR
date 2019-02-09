@@ -1,0 +1,798 @@
+---
+title: "Chapter 4 Logistic Regression"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+## The Stock Makret Data
+```{r}
+library(ISLR)
+names(Smarket)
+
+```
+
+
+```{r}
+dim(Smarket)
+```
+
+```{r}
+summary(Smarket)
+```
+
+```{r}
+pairs(Smarket)
+```
+
+```{r}
+cor(Smarket[,-9])
+```
+
+```{r}
+attach(Smarket)
+plot(Volume)
+```
+## Logistic Regression
+```{r}
+glm.fit=glm(Direction~Lag1+Lag2+Lag3+Lag4+Lag5+Volume, data=Smarket, family=binomial)
+summary(glm.fit)
+```
+
+```{r}
+coef(glm.fit)
+```
+
+```{r}
+summary(glm.fit)$coef
+```
+
+```{r}
+glm.probs=predict(glm.fit,type='response')
+glm.probs[1:10]
+```
+
+```{r}
+contrasts(Direction)
+```
+
+```{r}
+glm.pred=rep('Down',1250)
+glm.pred[glm.probs>.5]='Up'
+```
+
+```{r}
+table(glm.pred,Direction)
+```
+
+```{r}
+(507+145)/1250
+```
+
+```{r}
+mean(glm.pred==Direction)
+```
+
+```{r}
+train=(Year<2005)
+Smarket.2005=Smarket[!train,]
+dim(Smarket.2005)
+Direction.2005=Direction[!train]
+```
+
+```{r}
+glm.fit=glm(Direction~Lag1+Lag2+Lag3+Lag4+Lag5+Volume,
+    data=Smarket, family=binomial, subset=train)
+glm.probs=predict(glm.fit,Smarket.2005,type='response')
+```
+
+```{r}
+glm.pred=rep('Down',252)
+glm.pred[glm.probs>.5]='Up'
+table(glm.pred,Direction.2005)
+```
+
+```{r}
+mean(glm.pred==Direction.2005)
+```
+
+```{r}
+mean(glm.pred!=Direction.2005)
+```
+
+```{r}
+glm.fit=glm(Direction~Lag1+Lag2, data=Smarket, family=binomial,subset=train)
+glm.probs=predict(glm.fit,Smarket.2005,type='response')
+glm.pred=rep('Down',252)
+glm.pred[glm.probs>.5]='Up'
+table(glm.pred,Direction.2005)
+```
+
+```{r}
+mean(glm.pred==Direction.2005)
+```
+
+```{r}
+predict(glm.fit,newdata=data.frame(Lag1=c(1.2,1.5),Lag2=c(1.1,-0.8)),type='response')
+```
+## Linear Discriminant Analysis
+```{r}
+library(MASS)
+lda.fit=lda(Direction~Lag1+Lag2,data=Smarket,subset=train)
+lda.fit
+```
+
+```{r}
+lda.pred=predict(lda.fit,Smarket.2005)
+names(lda.pred)
+```
+
+```{r}
+lda.class=lda.pred$class
+table(lda.class,Direction.2005)
+```
+
+```{r}
+mean(lda.class==Direction.2005)
+```
+
+```{r}
+sum(lda.pred$posterior[,1]>=.5)
+```
+
+```{r}
+sum(lda.pred$posterior[,1]<.5)
+```
+
+```{r}
+lda.pred$posterior[1:20,1]
+lda.class[1:20]
+```
+
+```{r}
+sum(lda.pred$posterior[,1]>.9)
+```
+### Quadratic Discriminant Analysis
+```{r}
+qda.fit=qda(Direction~Lag1+Lag2, data=Smarket,subset=train)
+qda.fit
+```
+
+```{r}
+qda.class=predict(qda.fit,Smarket.2005)$class
+table(qda.class,Direction.2005)
+
+```
+
+```{r}
+mean(qda.class==Direction.2005)
+```
+### K-Nearest Neighbors 
+```{r}
+library(class)
+train.X=cbind(Lag1,Lag2)[train,]
+test.X=cbind(Lag1,Lag2)[!train,]
+train.Direction=Direction[train]
+set.seed(1)
+knn.pred=knn(train.X,test.X,train.Direction,k=1)
+table(knn.pred,Direction.2005)
+
+```
+
+```{r}
+knn.pred=knn(train.X,test.X,train.Direction,k=3)
+table(knn.pred,Direction.2005)
+```
+
+```{r}
+mean(knn.pred==Direction.2005)
+```
+
+
+
+### An Application to Caravan Insurance Data
+```{r}
+dim(Caravan)
+```
+
+```{r}
+attach(Caravan)
+summary(Purchase)
+```
+
+```{r}
+standardized.X=scale(Caravan[,-86])
+var(Caravan[,1])
+```
+
+```{r}
+var(Caravan[,2])
+```
+
+```{r}
+var(standardized.X[,1])
+```
+
+```{r}
+test=1:1000
+train.X=standardized.X[-test,]
+test.X=standardized.X[test,]
+train.Y=Purchase[-test]
+test.Y=Purchase[test]
+set.seed(1)
+knn.pred=knn(train.X,test.X,train.Y,k=1)
+mean(test.Y!=knn.pred)
+```
+
+```{r}
+mean(test.Y!='No')
+```
+
+```{r}
+table(knn.pred,test.Y)
+test.Y
+```
+
+```{r}
+knn.pred=knn(train.X,test.X,train.Y,k=3)
+table(knn.pred,test.Y)
+```
+
+```{r}
+knn.pred=knn(train.X,test.X,train.Y,k=5)
+table(knn.pred,test.Y)
+```
+
+```{r}
+glm.fit=glm(Purchase~.,data=Caravan,family=binomial, subset=-test)
+
+```
+
+```{r}
+glm.probs=predict(glm.fit,Caravan[test,],type='response')
+glm.pred=rep('No',1000)
+glm.pred[glm.probs>.5]='Yes'
+table(glm.pred,test.Y)
+```
+
+```{r}
+glm.pred=rep('No',1000)
+glm.pred[glm.probs>.25]='Yes'
+table(glm.pred,test.Y)
+```
+### Exercises
+1
+= \frac {\frac {e^{\beta_0 + \beta_1 X}} {1 + e^{\beta_0 + \beta_1 X}}}
+        {1 - \frac {e^{\beta_0 + \beta_1 X}} {1 + e^{\beta_0 + \beta_1 X}}}
+\\
+= \frac {\frac {e^{\beta_0 + \beta_1 X}} {1 + e^{\beta_0 + \beta_1 X}}}
+        {
+          \frac {1 + e^{\beta_0 + \beta_1 X}} {1 + e^{\beta_0 + \beta_1 X}}
+          - \frac {e^{\beta_0 + \beta_1 X}} {1 + e^{\beta_0 + \beta_1 X}}
+        }
+\\
+= \frac {\frac {e^{\beta_0 + \beta_1 X}} {1 + e^{\beta_0 + \beta_1 X}}}
+        {\frac {1} {1 + e^{\beta_0 + \beta_1 X}}}
+\\
+(4.3)    \frac {p(X)} {1 - p(X)} =e^{\beta_0 + \beta_1 X}
+
+
+2
+Assuming that fk(x) is normal, the probability that an observation x is in class k is given by
+pk(x)=πk12π√σexp(−12σ2(x−μk)2)∑πl12π√σexp(−12σ2(x−μl)2)
+while the discriminant function is given by
+δk(x)=xμkσ2−μ2k2σ2+log(πk)
+Claim: Maximizing pk(x) is equivalent to maximizing δk(x).
+
+Proof. Let x remain fixed and observe that we are maximizing over the parameter k. Suppose that δk(x)≥δi(x). We will show that fk(x)≥fi(x). From our assumption we have
+xμkσ2−μ2k2σ2+log(πk)≥xμiσ2−μ2i2σ2+log(πi).
+Exponentiation is a monotonically increasing function, so the following inequality holds
+πkexp(xμkσ2−μ2k2σ2)≥πiexp(xμiσ2−μ2i2σ2)
+Multipy this inequality by the positive constant
+c=12π√σexp(−12σ2x2)∑πl12π√σexp(−12σ2(x−μl)2)
+and we have that
+πk12π√σexp(−12σ2(x−μk)2)∑πl12π√σexp(−12σ2(x−μl)2)≥πi12π√σexp(−12σ2(x−μi)2)∑πl12π√σexp(−12σ2(x−μl)2)
+or equivalently, fk(x)≥fi(x). Reversing these steps also holds, so we have that maximizing δk is equivalent to maximizing pk.
+
+3
+
+pk(x)=πk12π√σkexp(−12σ2k(x−μk)2)∑πl12π√σlexp(−12σ2l(x−μl)2)log(pk(x))=log(πk)+log(12π√σk)+−12σ2k(x−μk)2log(∑πl12π√σlexp(−12σ2l(x−μl)2))log(pk(x))log(∑πl12π‾‾‾√σlexp(−12σ2l(x−μl)2))=log(πk)+log(12π‾‾‾√σk)+−12σ2k(x−μk)2δ(x)=log(πk)+log(12π‾‾‾√σk)+−12σ2k(x−μk)2
+As you can see, δ(x) is a quadratic function of x.
+
+
+4
+
+a.
+On average, 10%. For simplicity, ignoring cases when X < 0.05 and X > 0.95.
+
+b.
+On average, 1%
+
+c.
+On average, 0.10100∗100=10−98%.
+
+d.
+As p increases linear, observations that are geometrically near decrease exponentially.
+
+e.
+p=1,l=0.10p=2,l=0.10‾‾‾‾√ 0.32p=3,l=0.101/3 0.46...p=N,l=0.101/N
+
+
+5
+
+a.
+If the Bayes decision boundary is linear, we expect QDA to perform better on the training set because it's higher flexiblity will yield a closer fit. On the test set, we expect LDA to perform better than QDA because QDA could overfit the linearity of the Bayes decision boundary.
+
+b.
+If the Bayes decision bounary is non-linear, we expect QDA to perform better both on the training and test sets.
+
+c.
+We expect the test prediction accuracy of QDA relative to LDA to improve, in general, as the the sample size n increases because a more flexibile method will yield a better fit as more samples can be fit and variance is offset by the larger sample sizes.
+
+d.
+False. With fewer sample points, the variance from using a more flexible method, such as QDA, would lead to overfit, yielding a higher test rate than LDA.
+
+6
+
+p(X)=exp(β0+β1X1+β2X2)1+exp(β0+β1X1+β2X2)X1=hoursstudied,X2=undergradGPAβ0=−6,β1=0.05,β2=1
+a.
+X=[40hours,3.5GPA]p(X)=exp(−6+0.05X1+X2)1+exp(−6+0.05X1+X2)=exp(−6+0.0540+3.5)1+exp(−6+0.0540+3.5)=exp(−0.5)1+exp(−0.5)=37.75%
+b.
+X=[X1hours,3.5GPA]p(X)=exp(−6+0.05X1+X2)1+exp(−6+0.05X1+X2)0.50=exp(−6+0.05X1+3.5)1+exp(−6+0.05X1+3.5)0.50(1+exp(−2.5+0.05X1))=exp(−2.5+0.05X1)0.50+0.50exp(−2.5+0.05X1))=exp(−2.5+0.05X1)0.50=0.50exp(−2.5+0.05X1)log(1)=−2.5+0.05X1X1=2.5/0.05=50hours
+
+7
+
+pk(x)=πk12π√σexp(−12σ2(x−μk)2)∑πl12π√σexp(−12σ2(x−μl)2)pyes(x)=πyesexp(−12σ2(x−μyes)2)∑πlexp(−12σ2(x−μl)2)=πyesexp(−12σ2(x−μyes)2)πyesexp(−12σ2(x−μyes)2)+πnoexp(−12σ2(x−μno)2)=0.80exp(−12∗36(x−10)2)0.80exp(−12∗36(x−10)2)+0.20exp(−12∗36x2)pyes(4)=0.80exp(−12∗36(4−10)2)0.80exp(−12∗36(4−10)2)+0.20exp(−12∗3642)=75.2%
+
+8
+
+Given:
+
+Logistic regression: 20% training error rate, 30% test error rate KNN(K=1): average error rate of 18%
+
+For KNN with K=1, the training error rate is 0% because for any training observation, its nearest neighbor will be the response itself. So, KNN has a test error rate of 36%. I would choose logistic regression because of its lower test error rate of 30%.
+
+9
+
+a.
+p(X)1−p(X)=0.37p(X)=0.37(1−p(X))1.37p(X)=0.37p(X)=0.371.37=27%
+b.
+odds=p(X)1−p(X)=.16/.84=0.19
+
+10
+
+a
+```{r}
+library(ISLR)
+summary(Weekly)
+```
+
+```{r}
+pairs(Weekly)
+```
+
+```{r}
+cor(Weekly[,-9])
+```
+Year and Volume appear to have a relationship.  
+
+b
+
+```{r}
+glm.fit=glm(Direction~ Lag1+Lag2+Lag3+Lag4+Lag5+Volume,data=Weekly,family=binomial)
+summary(glm.fit)
+```
+ Lag 2 appears to have some statistical significance with a Pr(>|z|) = 3%.
+ 
+ c
+```{r}
+glm.probs = predict(glm.fit, type = "response")
+glm.pred = rep("Down", length(glm.probs))
+glm.pred[glm.probs > 0.5] = "Up"
+table(glm.pred, Direction)
+```
+
+```{r}
+train = (Year < 2009)
+Weekly.0910 = Weekly[!train, ]
+glm.fit = glm(Direction ~ Lag2, data = Weekly, family = binomial, subset = train)
+glm.probs = predict(glm.fit, Weekly.0910, type = "response")
+glm.pred = rep("Down", length(glm.probs))
+glm.pred[glm.probs > 0.5] = "Up"
+Direction.0910 = Direction[!train]
+table(glm.pred, Direction.0910)
+```
+
+```{r}
+mean(glm.pred == Direction.0910)
+```
+e
+
+```{r}
+library(MASS)
+lda.fit = lda(Direction ~ Lag2, data = Weekly, subset = train)
+lda.pred = predict(lda.fit, Weekly.0910)
+table(lda.pred$class, Direction.0910)
+```
+
+```{r}
+mean(lda.pred$class == Direction.0910)
+```
+f
+
+```{r}
+qda.fit = qda(Direction ~ Lag2, data = Weekly, subset = train)
+qda.class = predict(qda.fit, Weekly.0910)$class
+table(qda.class, Direction.0910)
+```
+
+```{r}
+mean(qda.class == Direction.0910)
+```
+g
+
+```{r}
+# Logistic regression with Lag2:Lag1
+glm.fit = glm(Direction ~ Lag2:Lag1, data = Weekly, family = binomial, subset = train)
+glm.probs = predict(glm.fit, Weekly.0910, type = "response")
+glm.pred = rep("Down", length(glm.probs))
+glm.pred[glm.probs > 0.5] = "Up"
+Direction.0910 = Direction[!train]
+table(glm.pred, Direction.0910)
+```
+h
+Logistic regression and LDA methods provide similar test error rates.
+
+i
+
+```{r}
+# Logistic regression with Lag2:Lag1
+glm.fit = glm(Direction ~ Lag2:Lag1, data = Weekly, family = binomial, subset = train)
+glm.probs = predict(glm.fit, Weekly.0910, type = "response")
+glm.pred = rep("Down", length(glm.probs))
+glm.pred[glm.probs > 0.5] = "Up"
+Direction.0910 = Direction[!train]
+table(glm.pred, Direction.0910)
+```
+
+```{r}
+mean(glm.pred == Direction.0910)
+```
+
+```{r}
+# LDA with Lag2 interaction with Lag1
+lda.fit = lda(Direction ~ Lag2:Lag1, data = Weekly, subset = train)
+lda.pred = predict(lda.fit, Weekly.0910)
+mean(lda.pred$class == Direction.0910)
+```
+
+```{r}
+
+# QDA with sqrt(abs(Lag2))
+qda.fit = qda(Direction ~ Lag2 + sqrt(abs(Lag2)), data = Weekly, subset = train)
+qda.class = predict(qda.fit, Weekly.0910)$class
+table(qda.class, Direction.0910)
+```
+
+```{r}
+mean(qda.class == Direction.0910)
+
+```
+
+```{r}
+# KNN k =10
+knn.pred = knn(train.X, test.X, train.Direction, k = 10)
+table(knn.pred, Direction.0910)
+
+```
+
+```{r}
+mean(knn.pred == Direction.0910)
+```
+
+```{r}
+
+# KNN k = 100
+knn.pred = knn(train.X, test.X, train.Direction, k = 100)
+table(knn.pred, Direction.0910)
+```
+
+```{r}
+mean(knn.pred == Direction.0910)
+```
+Out of these permutations, the original LDA and logistic regression have better performance in terms of test error rate.
+
+11
+a
+
+```{r}
+library(ISLR)
+summary(Auto)
+```
+
+```{r}
+attach(Auto)
+mpg01 = rep(0, length(mpg))
+mpg01[mpg > median(mpg)] = 1
+Auto = data.frame(Auto, mpg01)
+```
+b
+
+```{r}
+cor(Auto[, -9])
+```
+
+```{r}
+pairs(Auto)  # doesn't work well since mpg01 is 0 or 1
+```
+c
+
+```{r}
+train = (year%%2 == 0)  # if the year is even
+test = !train
+Auto.train = Auto[train, ]
+Auto.test = Auto[test, ]
+mpg01.test = mpg01[test]
+```
+d
+
+```{r}
+# LDA
+library(MASS)
+lda.fit = lda(mpg01 ~ cylinders + weight + displacement + horsepower, data = Auto, 
+    subset = train)
+lda.pred = predict(lda.fit, Auto.test)
+mean(lda.pred$class != mpg01.test)
+
+```
+
+12.6% test error rate.
+
+e
+
+```{r}
+qda.fit = qda(mpg01 ~ cylinders + weight + displacement + horsepower, data = Auto, 
+    subset = train)
+qda.pred = predict(qda.fit, Auto.test)
+mean(qda.pred$class != mpg01.test)
+```
+13.2% test error rate.
+
+f
+
+```{r}
+# Logistic regression
+glm.fit = glm(mpg01 ~ cylinders + weight + displacement + horsepower, data = Auto, 
+    family = binomial, subset = train)
+glm.probs = predict(glm.fit, Auto.test, type = "response")
+glm.pred = rep(0, length(glm.probs))
+glm.pred[glm.probs > 0.5] = 1
+mean(glm.pred != mpg01.test)
+```
+12.1% test error rate.
+
+g
+
+
+```{r}
+library(class)
+train.X = cbind(cylinders, weight, displacement, horsepower)[train, ]
+test.X = cbind(cylinders, weight, displacement, horsepower)[test, ]
+train.mpg01 = mpg01[train]
+set.seed(1)
+# KNN(k=1)
+knn.pred = knn(train.X, test.X, train.mpg01, k = 1)
+mean(knn.pred != mpg01.test)
+
+```
+
+```{r}
+# KNN(k=10)
+knn.pred = knn(train.X, test.X, train.mpg01, k = 10)
+mean(knn.pred != mpg01.test)
+```
+
+```{r}
+# KNN(k=100)
+knn.pred = knn(train.X, test.X, train.mpg01, k = 100)
+mean(knn.pred != mpg01.test)
+```
+k=1, 15.4% test error rate. k=10, 16.5% test error rate. k=100, 14.3% test error rate. K of 100 seems to perform the best. 100 nearest neighbors
+
+12 
+a
+
+```{r}
+Power = function() {
+    2^3
+}
+print(Power())
+```
+b
+
+```{r}
+Power2 = function(x, a) {
+    x^a
+}
+Power2(3, 8)
+```
+c
+
+```{r}
+Power2(10, 3)
+
+```
+
+```{r}
+Power2(8, 17)
+
+```
+
+```{r}
+Power2(131, 3)
+```
+d
+
+```{r}
+Power3 = function(x, a) {
+    result = x^a
+    return(result)
+}
+```
+e
+
+```{r}
+x = 1:10
+plot(x, Power3(x, 2), log = "xy", ylab = "Log of y = x^2", xlab = "Log of x", 
+    main = "Log of x^2 versus Log of x")
+```
+f
+
+```{r}
+PlotPower = function(x, a) {
+    plot(x, Power3(x, a))
+}
+PlotPower(1:10, 3)
+
+```
+13
+
+
+
+```{r}
+library(MASS)
+summary(Boston)
+```
+
+```{r}
+attach(Boston)
+crime01 = rep(0, length(crim))
+crime01[crim > median(crim)] = 1
+Boston = data.frame(Boston, crime01)
+
+train = 1:(dim(Boston)[1]/2)
+test = (dim(Boston)[1]/2 + 1):dim(Boston)[1]
+Boston.train = Boston[train, ]
+Boston.test = Boston[test, ]
+crime01.test = crime01[test]
+```
+
+```{r}
+# logistic regression
+glm.fit = glm(crime01 ~ . - crime01 - crim, data = Boston, family = binomial, 
+    subset = train)
+```
+
+```{r}
+glm.probs = predict(glm.fit, Boston.test, type = "response")
+glm.pred = rep(0, length(glm.probs))
+glm.pred[glm.probs > 0.5] = 1
+mean(glm.pred != crime01.test)
+```
+
+```{r}
+glm.fit = glm(crime01 ~ . - crime01 - crim - chas - tax, data = Boston, family = binomial, 
+    subset = train)
+
+```
+
+```{r}
+glm.probs = predict(glm.fit, Boston.test, type = "response")
+glm.pred = rep(0, length(glm.probs))
+glm.pred[glm.probs > 0.5] = 1
+mean(glm.pred != crime01.test)
+```
+
+```{r}
+# LDA
+lda.fit = lda(crime01 ~ . - crime01 - crim, data = Boston, subset = train)
+lda.pred = predict(lda.fit, Boston.test)
+mean(lda.pred$class != crime01.test)
+```
+
+```{r}
+lda.fit = lda(crime01 ~ . - crime01 - crim - chas - tax, data = Boston, subset = train)
+lda.pred = predict(lda.fit, Boston.test)
+mean(lda.pred$class != crime01.test)
+
+```
+
+```{r}
+lda.fit = lda(crime01 ~ . - crime01 - crim - chas - tax - lstat - indus - age, 
+    data = Boston, subset = train)
+lda.pred = predict(lda.fit, Boston.test)
+mean(lda.pred$class != crime01.test)
+```
+
+```{r}
+# KNN
+library(class)
+train.X = cbind(zn, indus, chas, nox, rm, age, dis, rad, tax, ptratio, black, 
+    lstat, medv)[train, ]
+test.X = cbind(zn, indus, chas, nox, rm, age, dis, rad, tax, ptratio, black, 
+    lstat, medv)[test, ]
+train.crime01 = crime01[train]
+set.seed(1)
+# KNN(k=1)
+knn.pred = knn(train.X, test.X, train.crime01, k = 1)
+mean(knn.pred != crime01.test)
+
+```
+
+```{r}
+# KNN(k=10)
+knn.pred = knn(train.X, test.X, train.crime01, k = 10)
+mean(knn.pred != crime01.test)
+```
+
+```{r}
+# KNN(k=100)
+knn.pred = knn(train.X, test.X, train.crime01, k = 100)
+mean(knn.pred != crime01.test)
+```
+
+```{r}
+# KNN(k=10) with subset of variables
+train.X = cbind(zn, nox, rm, dis, rad, ptratio, black, medv)[train, ]
+test.X = cbind(zn, nox, rm, dis, rad, ptratio, black, medv)[test, ]
+knn.pred = knn(train.X, test.X, train.crime01, k = 10)
+mean(knn.pred != crime01.test)
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+

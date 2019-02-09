@@ -1,0 +1,631 @@
+---
+title: "ISLR Chapter 3 - Linear Regression"
+output:
+  html_document: default
+  html_notebook: default
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Cmd+Shift+Enter*. 
+
+```{r}
+library(MASS)
+library(ISLR)
+```
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Cmd+Option+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Cmd+Shift+K* to preview the HTML file).
+```{r}
+#fix(Boston)
+names(Boston)
+attach(Boston)
+```
+
+```{r}
+lm.fit=lm(medv~lstat)
+lm.fit
+```
+
+```{r}
+summary(lm.fit)
+```
+
+```{r}
+coef(lm.fit)
+```
+
+```{r}
+confint(lm.fit)
+```
+
+```{r}
+predict(lm.fit,data.frame(lstat=c(5,10,14)),interval="confidence")
+```
+
+```{r}
+predict(lm.fit,data.frame(lstat=c(5,10,14)),interval="prediction")
+```
+
+```{r}
+plot(lstat,medv)
+abline(lm.fit)
+```
+
+```{r}
+plot(lstat,medv,pch="+")
+abline(lm.fit,lwd=3)
+abline(lm.fit,lwd=3,col="red")
+
+```
+
+```{r}
+par(mfrow=c(2,2))
+plot(lm.fit)
+```
+
+```{r}
+plot(predict(lm.fit), residuals(lm.fit))
+plot(predict(lm.fit),rstudent(lm.fit))
+```
+
+```{r}
+plot(hatvalues(lm.fit))
+which.max(hatvalues(lm.fit))
+```
+
+```{r}
+lm.fit=lm(medv~lstat+age,data=Boston)
+summary(lm.fit)
+```
+
+```{r}
+lm.fit=lm(medv~.,data=Boston)
+summary(lm.fit)
+```
+
+```{r}
+library(car)
+vif(lm.fit)
+```
+
+```{r}
+lm.fit1=lm(medv~.-age,data=Boston)
+summary(lm.fit1)
+```
+## Interaction Terms
+```{r}
+summary(lm(medv~lstat*age,data=Boston))
+```
+##Non-linear Transformations of the Predictors
+```{r}
+lm.fit2=lm(medv~lstat+I(lstat^2))
+summary(lm.fit2)
+```
+
+```{r}
+lm.fit=lm(medv~lstat)
+anova(lm.fit,lm.fit2)
+```
+
+```{r}
+par(mfrow=c(2,2))
+plot(lm.fit2)
+```
+
+```{r}
+lm.fit5=lm(medv~poly(lstat,5))
+summary(lm.fit5)
+```
+
+```{r}
+summary(lm(medv~log(rm),data=Boston))
+```
+## Qualitative Predictors
+```{r}
+fix(Carseats)
+names(Carseats)
+```
+
+```{r}
+lm.fit=lm(Sales~.+Income:Advertising+Price:Age,data=Carseats)
+summary(lm.fit)
+```
+## Writing Functions
+```{r}
+LoadLibraries=function(){
+  library(ISLR)
+  library(MASS)
+  print("The libraries have been loaded.")
+}
+LoadLibraries()
+```
+# Exercises 
+1. Describe the null hypotheses to which the p-values given in Table 3.4
+correspond. Explain what conclusions you can draw based on these
+p-values. Your explanation should be phrased in terms of sales, TV,
+radio, and newspaper, rather than in terms of the coefficients of the
+linear model.
+
+In Table 3.4, the null hypothesis for "TV" is that in the presence of radio
+ads and newspaper ads, TV ads have no effect on sales. Similarly, the null
+hypothesis for "radio" is that in the presence of TV and newspaper ads, radio
+ads have no effect on sales. (And there is a similar null hypothesis for
+"newspaper".) The low p-values of TV and radio suggest that the null hypotheses
+are false for TV and radio. The high p-value of newspaper suggests that the null
+hypothesis is true for newspaper.
+
+2. Carefully explain the differences between the KNN classifier and KNN
+regression methods.
+
+KNN classifier and KNN regression methods are closely related in formula.
+However, the final result of KNN classifier is the classification output for Y
+(qualitative), where as the output for a KNN regression predicts the
+quantitative value for f(X).
+
+
+3. Suppose we have a data set with five predictors, X1 = GPA, X2 = IQ,
+X3 = Gender (1 for Female and 0 for Male), X4 = Interaction between
+GPA and IQ, and X5 = Interaction between GPA and Gender. The
+response is starting salary after graduation (in thousands of dollars).
+Suppose we use least squares to fit the model, and get βˆ0 = 50, βˆ1 =
+20, βˆ2 = 0.07, βˆ3 = 35, βˆ4 = 0.01, βˆ5 = −10.
+(a) Which answer is correct, and why?
+i. For a fixed value of IQ and GPA, males earn more on average
+than females.
+ii. For a fixed value of IQ and GPA, females earn more on
+average than males.
+iii. For a fixed value of IQ and GPA, males earn more on average
+than females provided that the GPA is high enough.
+iv. For a fixed value of IQ and GPA, females earn more on
+average than males provided that the GPA is high enough.
+
+(a) Y = 50 + 20 k_1 + 0.07 k_2 + 35 gender + 0.01(k_1 * k_2) - 10 (k_1 * gender)
+male: (gender = 0)   50 + 20 k_1 + 0.07 k_2 + 0.01(k_1 * k_2)
+female: (gender = 1) 50 + 20 k_1 + 0.07 k_2 + 35 + 0.01(k_1 * k_2) - 10 (k_1)
+Once the GPA is high enough, males earn more on average. => iii.
+
+
+(b) Predict the salary of a female with IQ of 110 and a GPA of 4.0.
+
+(b) Y(Gender = 1, IQ = 110, GPA = 4.0)
+= 50 + 20 * 4 + 0.07 * 110 + 35 + 0.01 (4 * 110) - 10 * 4
+= 137.1
+(c) True or false: Since the coefficient for the GPA/IQ interaction
+term is very small, there is very little evidence of an interaction
+effect. Justify your answer.
+
+(c) False. We must examine the p-value of the regression coefficient to
+determine if the interaction term is statistically significant or not.
+
+
+
+
+
+
+
+
+4. I collect a set of data (n = 100 observations) containing a single
+predictor and a quantitative response. I then fit a linear regression
+model to the data, as well as a separate cubic regression, i.e. Y =
+β0 + β1X + β2X2 + β3X3 + .
+(a) Suppose that the true relationship between X and Y is linear,
+i.e. Y = β0 + β1X + . Consider the training residual sum of
+squares (RSS) for the linear regression, and also the training
+RSS for the cubic regression. Would we expect one to be lower
+than the other, would we expect them to be the same, or is there
+not enough information to tell? Justify your answer.
+3.7 Exercises 121
+
+(a) I would expect the polynomial regression to have a lower training RSS
+than the linear regression because it could make a tighter fit against data that
+matched with a wider irreducible error (Var(epsilon)).
+
+(b) Answer (a) using test rather than training RSS.
+
+Converse to (a), I would expect the polynomial regression to have a higher
+test RSS as the overfit from training would have more error than the linear
+regression.
+
+(c) Suppose that the true relationship between X and Y is not linear,
+but we don’t know how far it is from linear. Consider the training
+RSS for the linear regression, and also the training RSS for the
+cubic regression. Would we expect one to be lower than the
+other, would we expect them to be the same, or is there not
+enough information to tell? Justify your answer.
+
+Polynomial regression has lower train RSS than the linear fit because of
+higher flexibility: no matter what the underlying true relationshop is the
+more flexible model will closer follow points and reduce train RSS.
+An example of this beahvior is shown on Figure~2.9 from Chapter 2.
+
+(d) Answer (c) using test rather than training RSS.
+
+There is not enough information to tell which test RSS would be lower
+for either regression given the problem statement is defined as not knowing
+"how far it is from linear". If it is closer to linear than cubic, the linear
+regression test RSS could be lower than the cubic regression test RSS.
+Or, if it is closer to cubic than linear, the cubic regression test RSS
+could be lower than the linear regression test RSS. It is dues to
+bias-variance tradeoff: it is not clear what level of flexibility will
+fit data better.
+
+5. Consider the fitted values that result from performing linear regression without an intercept. In this setting, the ith fitted value takes
+the form
+yˆi = xiβ, ˆ
+where
+βˆ =
+n
+i=1
+xiyi
+
+/
+n
+i=1
+x2
+i
+
+. (3.38)
+Show that we can write
+yˆi = n
+i=1
+aiyi .
+What is ai?
+Note: We interpret this result by saying that the fitted values from
+linear regression are linear combinations of the response values.
+
+6.  Using (3.4), argue that in the case of simple linear regression, the
+least squares line always passes through the point (¯x, y¯).
+
+y = B_0 + B_1 x
+from (3.4): B_0 = avg(y) - B_1 avg(x)
+right hand side will equal 0 if (avg(x), avg(y)) is a point on the line
+0 = B_0 + B_1 avg(x) - avg(y)
+0 = (avg(y) - B_1 avg(x)) + B_1 avg(x) - avg(y)
+0 = 0
+
+## Applied
+8.
+```{r}
+lm.fit = lm(mpg~horsepower, data=Auto)
+summary(lm.fit)
+```
+
+# i. Yes, there is a relationship between predictor and response
+# ii. p-value is close to 0: relationship is strong
+# iii. Coefficient is negative: relationship is negative
+
+
+```{r}
+plot(Auto$horsepower, Auto$mpg)
+abline(lm.fit, col='red')
+```
+
+```{r}
+par(mfrow=c(2,2))
+plot(lm.fit)
+```
+#9. 
+```{r}
+pairs(Auto)
+```
+
+```{r}
+cor(subset(Auto,select=-name))
+```
+
+```{r}
+lm.fit = lm(mpg~.-name,data=Auto)
+summary(lm.fit)
+```
+ There is a relationship between predictors and response
+* `weight`, `year`, `origin` and `displacement` have statistically significant relationships
+* 0.75 coefficient for `year` suggests that later model year cars have better (higher) `mpg`
+```{r}
+par(mfrow=c(2,2))
+plot(lm.fit)
+```
+Evidence of non-linearity
+```{r}
+lm.fit0 <- lm(mpg~displacement+weight+year+origin, data=Auto)
+lm.fit1 <- lm(mpg~displacement+weight+year*origin, data=Auto)
+lm.fit2 <- lm(mpg~displacement+origin+year*weight, data=Auto)
+lm.fit3 <- lm(mpg~year+origin+displacement*weight, data=Auto)
+summary(lm.fit0)
+summary(lm.fit1)
+summary(lm.fit2)
+summary(lm.fit3)
+```
+
+```{r}
+lm.fit4 <- lm(mpg~poly(displacement,3)+weight+year+origin, data=Auto)
+lm.fit5 <- lm(mpg~displacement+I(log(weight))+year+origin, data=Auto)
+lm.fit6 <- lm(mpg~displacement+I(weight^2)+year+origin, data=Auto)
+summary(lm.fit4)
+summary(lm.fit5)
+summary(lm.fit6)
+```
+10.
+```{r}
+data(Carseats)
+lm.fit <- lm(Sales ~ Price + Urban + US, data=Carseats)
+summary(lm.fit)
+```
+Sales: sales in thousands at each location
+Price: price charged for car seats at each location
+Urban: No/Yes by location
+US: No/Yes by location
+
+Coefficients for
+
+* Price (-0.054459): Sales drop by 54 for each dollar increase in Price - statistically significant
+* UrbanYes (-0.021916): Sales are 22 lower for Urban locations - not statistically significant
+* USYes (1.200573): Sales are 1,201 higher in the US locations - statistically significant
+
+Sales = 13.043 - 0.054 x Price - 0.022 x UrbanYes + 1.201 x USYes
+
+Can reject null hypothesis for Price and USYes (coefficients have low p-values)
+```{r}
+lm.fit1 = lm(Sales ~ Price + US, data=Carseats)
+summary(lm.fit1)
+```
+
+```{r}
+confint(lm.fit1)
+```
+11.
+```{r}
+set.seed(1)
+x <- rnorm(100)
+y <- 2*x + rnorm(100)
+fit.lmY <- lm(y ~ x + 0)
+summary(fit.lmY)
+```
+Small std. error for coefficient relative to coefficient estimate. p-value is close to zero so statistically significant.
+```{r}
+fit.lmX <- lm(x ~ y + 0)
+summary(fit.lmX)
+```
+Same as Part a). Small std. error for coefficient relative to coefficient estimate. p-value is close to zero so statistically significant.
+
+```{r}
+fit.lmY2 <- lm(y ~ x)
+fit.lmX2 <- lm(x ~ y)
+summary(fit.lmY2)
+summary(fit.lmX2)
+```
+t-statistics for both regressions are 18.56
+
+12
+When $x_{i}=y_{i}$, or more generally when the beta denominators are equal $\sum x_{i}^2=\sum y_{i}^2$
+```{r}
+# exercise 11 example works
+set.seed(1)
+x <- rnorm(100)
+y <- 2*x + rnorm(100)
+fit.lmY <- lm(y ~ x)
+fit.lmX <- lm(x ~ y)
+summary(fit.lmY)
+summary(fit.lmX)
+```
+
+```{r}
+set.seed(1)
+x <- rnorm(100, mean=1000, sd=0.1)
+y <- rnorm(100, mean=1000, sd=0.1)
+fit.lmY <- lm(y ~ x)
+fit.lmX <- lm(x ~ y)
+summary(fit.lmY)
+summary(fit.lmX)
+```
+Both betas are 0.005
+
+
+13
+
+```{r}
+set.seed(1)
+x <- rnorm(100)  # mean=0, sd=1 is default
+```
+
+```{r}
+eps <- rnorm(100, sd=0.25^0.5)
+```
+
+```{r}
+y <- -1 + 0.5*x + eps  # eps=epsilon=e 
+length(y)
+```
+* length is 100
+* $\beta_{0}=-1$
+* $\beta_{1}=0.5$
+```{r}
+plot(x,y)
+```
+x and y seem to be positively correlated
+```{r}
+fit.lm <- lm(y ~ x)
+summary(fit.lm)
+
+```
+Estimated $\hat{\beta_{0}}=-1.019$ and $\hat{\beta_{1}}=0.499$, which are close to actual betas used to generate `y`
+```{r}
+plot(x,y)
+abline(-1, 0.5, col="blue")  # true regression
+abline(fit.lm, col="red")    # fitted regression
+legend(x = c(0,2.7),
+       y = c(-2.5,-2),
+       legend = c("population", "model fit"),
+       col = c("blue","red"), lwd=2 )
+```
+
+
+```{r}
+fit.lm1 <- lm(y~x+I(x^2))
+summary(fit.lm1)
+anova(fit.lm, fit.lm1)
+```
+No evidence of better fit based on high p-value of coefficient for X^2. Estimated coefficient for $\hat{\beta_{1}}$ is farther from true value. Anova test also suggests polynomial fit is not any better.
+
+```{r}
+eps2 <- rnorm(100, sd=0.1)  # prior sd was 0.5
+y2 <- -1 + 0.5*x + eps2
+fit.lm2 <- lm(y2 ~ x)
+summary(fit.lm2)
+plot(x, y2)
+abline(-1, 0.5, col="blue")   # true regression
+abline(fit.lm2, col="red")    # fitted regression
+legend(x = c(-2,-0.5),
+       y = c(-0.5,0),
+       legend = c("population", "model fit"),
+       col = c("blue","red"), lwd=2 )
+```
+Decreased variance along regression line. Fit for original y was already very good, so coef estimates are about the same for reduced epsilon. However, RSE and R^2 values are much improved.
+```{r}
+eps3 <- rnorm(100, sd=1)  # orig sd was 0.5
+y3 <- -1 + 0.5*x + eps3
+fit.lm3 <- lm(y3 ~ x)
+summary(fit.lm3)
+plot(x, y3)
+abline(-1, 0.5, col="blue")   # true regression
+abline(fit.lm3, col="red")    # fitted regression
+legend(x = c(0,2),
+       y = c(-4,-3),
+       legend = c("population", "model fit"),
+       col = c("blue","red"), lwd=2 )
+```
+Coefficient estimates are farther from true value (but not by too much). And, the RSE and R^2 values are worse.
+```{r}
+confint(fit.lm)
+confint(fit.lm2)
+confint(fit.lm3)
+```
+Confidence intervals are tighter for original populations with smaller variance
+
+14
+
+```{r}
+set.seed(1)
+x1 <- runif(100)
+x2 <- 0.5*x1 + rnorm(100)/10
+y <- 2 + 2*x1 + 0.3*x2 + rnorm(100)
+```
+Population regression is $y = \beta_{0} + \beta_{1} x_1 + \beta_{2} x_2 + \varepsilon$, where $\beta_{0}=2$, $\beta_{1}=2$ and $\beta_{2}=0.3$
+
+```{r}
+cor(x1,x2)
+plot(x1,x2)
+```
+
+```{r}
+fit.lm <- lm(y~x1+x2)
+summary(fit.lm)
+```
+Estimated beta coefficients are $\hat{\beta_{0}}=2.13$, $\hat{\beta_{1}}=1.44$ and $\hat{\beta_{2}}=1.01$. Coefficient for x1 is statistically significant but the coefficient for x2 is not given the presense of x1. These betas try to estimate the population betas: $\hat{\beta_{0}}$ is close (rounds to 2), $\hat{\beta_{1}}$ is 1.44 instead of 2 with a high standard error and $\hat{\beta_{2}}$ is farthest off.
+
+Reject $H_0 : \beta_1=0$; Cannot reject $H_0 : \beta_2=0$
+
+```{r}
+fit.lm1 <- lm(y~x1)
+summary(fit.lm1)
+```
+p-value is close to 0, can reject $H_0 : \beta_1=0$
+```{r}
+fit.lm2 <- lm(y~x2)
+summary(fit.lm2)
+```
+p-value is close to 0, can reject $H_0 : \beta_2=0$
+
+
+No. Without the presence of other predictors, both $\beta_1$ and $\beta_2$ are statistically significant. In the presence of other predictors, $\beta_2$ is no longer statistically significant.
+
+
+```{r}
+x1 <- c(x1, 0.1)
+x2 <- c(x2, 0.8)
+y <- c(y, 6)
+par(mfrow=c(2,2))
+# regression with both x1 and x2
+fit.lm <- lm(y~x1+x2)
+summary(fit.lm)
+plot(fit.lm)
+# regression with x1 only
+fit.lm1 <- lm(y~x2)
+summary(fit.lm1)
+plot(fit.lm1)
+# regression with x2 only
+fit.lm2 <- lm(y~x1)
+summary(fit.lm2)
+plot(fit.lm2)
+```
+New point is an outlier for x2 and has high leverage for both x1 and x2. 
+
+* X1 + X2: residuals vs. leverage plot shows obs 101 as standing out. we want to see the red line be close to the dotted black line but the new point causes major issues.
+* X1 only: new point has high leverage but doesn't cause issues because new point is not an outlier for x1 or y.
+* X2 only: new point has high leverage but doesn't cause major issues because it falls close to the regression line.
+
+```{r}
+plot(x1, y)
+plot(x2, y)
+```
+For basics, we refer to Zeng [4], Section 7.
+Some important questions of linear regression:
+• Is at least one of the predictors X1, X2, · · · , Xp useful in predicting the response?
+• Do all the predictors help to explain Y , or is only a subset of the predictors useful?
+• How well does the model fit the data?
+• Given a set of predictor values, what response value should we predict, and how accurate is our
+prediction?
+Is at least one predictor useful? Use the F-statistic
+F =
+(T SS − RSS)/p
+RSS/(n − p − 1) ∼ Fp,n−p−1.
+Deciding on the important variables.
+• All subsets or best subsets regression: compute the least squares fit for all possible subsets and then
+choose between them based on some criterion that balances training error with model size.
+• Forward selection. Begin with the null model – a model that contains an intercept but no predictors.
+Fit p simple linear regressions and add to the null model the variable that results in the lowest RSS. Add to that model the variable that results in the lowest RSS amongst all two-variable models. Continue until some
+stopping rule is satisfied, for example when all remaining variables have a p-value above some threshold.
+• Backward selection. Start with al variables in the model. Remove the variable with the largest p-value
+– that is, the variable that is the least statistically significant. The new (p − 1)-variable model is fit, and
+the variable with the largest p-value is removed. Continue until a stopping rule is reached. For instance, we
+may stop when all remaining variables have a significant p-value defined by some significance threshold.
+• More systematic criteria: Mallow’s Cp, Akaike information criterion (AIC), Bayesian information
+criterion (BIC), adjusted R2
+, and Cross-validation (CV).
+Interactions. The hierarchy principle: If we include an interaction in a model, we should also include
+the main effects, even if the p-values associated with their coefficients are not significant. The rationale for
+this principle is that interactions are hard to interpret in a model without main effects – their meaning is
+changed.
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
